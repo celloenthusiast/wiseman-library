@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>My Library</title>
+
+  <script type="text/javascript" nonce="5bb4eff6e0c94268a2e2ee20686" src="//local.adguard.org?ts=1790279148627&amp;type=content-script&amp;dmn=chatgpt.com&amp;url=https%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000020788230beba4f6f36e37a62%26fn%3Dlibrary_0917J_EXACT.html%26cd%3Dattachment%26ts%3D497300%26p%3Dfs%26cid%3D1%26sig%3Dc39645a9251df988f76952d745edc01ad017b8f0679fb34cf37f9f6106c93c17%26v%3D0&amp;app=com.brave.Browser&amp;css=2&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1&amp;stealth=1&amp;st-push&amp;st-loc&amp;st-dnt"></script><script type="text/javascript" nonce="5bb4eff6e0c94268a2e2ee20686" src="//local.adguard.org?ts=1790279148627&amp;name=AdGuard%20Extra&amp;type=user-script"></script><link rel="icon" type="image/png" href="https://celloenthusiast.github.io/wiseman-library-scanner/favicon.png">
+  <link rel="apple-touch-icon" href="https://celloenthusiast.github.io/wiseman-library-scanner/favicon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="My Library">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.12.1/dist/quagga.min.js"></script>
+
+  <style>
+    :root {
+      --bg:#ffffff;
+      --accent:#1f5f4a;
+      --text:#17202a;
+      --muted:#667085;
+      --danger:#b42318;
+    }
+
+    * {
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    html,
+    body {
+      margin:0;
+      padding:0;
+      width:100%;
+      height:100%;
+      min-height:100vh;
+      min-height:100svh;
+      overflow:hidden;
+      background:var(--bg);
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    #appFrame {
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      height:100svh;
+      border:0;
+      margin:0;
+      padding:0;
+      background:#fff;
+      z-index:1;
+    }
+
+    #loading {
+      position:fixed;
+      inset:0;
+      z-index:20;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      transition:opacity .18s ease;
+    }
+
+    #loading.hidden {
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .loadingInner {
+      text-align:center;
+      padding:24px;
+    }
+
+    .loadingIcon {
+      width:96px;
+      height:96px;
+      border-radius:22px;
+      object-fit:cover;
+      box-shadow:0 6px 20px rgba(0,0,0,.10);
+    }
+
+    .loadingTitle {
+      margin-top:14px;
+      font-size:21px;
+      font-weight:750;
+      color:var(--text);
+    }
+
+    .loadingText {
+      margin-top:5px;
+      font-size:14px;
+      color:var(--muted);
+    }
+
+    .bookPageLoader {
+      position:relative;
+      width:34px;
+      height:25px;
+      margin:18px auto 0;
+      perspective:75px;
+    }
+
+    .bookPageLoader::before,
+    .bookPageLoader::after {
+      content:'';
+      position:absolute;
+      top:3px;
+      width:16px;
+      height:19px;
+      border:2px solid var(--accent);
+      background:#fff;
+      box-sizing:border-box;
+    }
+
+    .bookPageLoader::before {
+      left:1px;
+      border-radius:4px 1px 1px 4px;
+      transform-origin:right center;
+    }
+
+    .bookPageLoader::after {
+      right:1px;
+      border-radius:1px 4px 4px 1px;
+      transform-origin:left center;
+      animation:bookPageFlip .85s ease-in-out infinite;
+    }
+
+    .bookPageLoader span {
+      position:absolute;
+      left:50%;
+      top:3px;
+      width:2px;
+      height:19px;
+      margin-left:-1px;
+      background:var(--accent);
+      border-radius:2px;
+      z-index:3;
+    }
+
+    @keyframes bookPageFlip {
+      0%,18% { transform:rotateY(0deg); }
+      50%,68% { transform:rotateY(-155deg); }
+      100% { transform:rotateY(-180deg); }
+    }
+
+    /* Built-in scanner */
+    #scannerOverlay {
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:none;
+      background:#000;
+      color:#fff;
+      overflow:hidden;
+    }
+
+    #scannerOverlay.show {
+      display:block;
+    }
+
+    #scannerViewport {
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      background:#000;
+      overflow:hidden;
+    }
+
+    #scannerViewport video,
+    #scannerViewport canvas {
+      position:absolute !important;
+      inset:0 !important;
+      width:100% !important;
+      height:100% !important;
+      object-fit:cover !important;
+    }
+
+    #scannerViewport canvas.drawingBuffer {
+      display:none !important;
+    }
+
+    .scannerShade {
+      position:absolute;
+      inset:0;
+      z-index:5;
+      pointer-events:none;
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(0,0,0,.58) 0 31%,
+          rgba(0,0,0,.08) 31% 57%,
+          rgba(0,0,0,.58) 57% 100%
+        );
+    }
+
+    .scanTarget {
+      position:absolute;
+      z-index:6;
+      left:5vw;
+      right:5vw;
+      top:31vh;
+      height:26vh;
+      min-height:145px;
+      max-height:210px;
+      border:3px solid rgba(255,255,255,.96);
+      border-radius:18px;
+      pointer-events:none;
+      box-shadow:0 0 0 1px rgba(0,0,0,.35);
+    }
+
+    .scanTarget::after {
+      content:"";
+      position:absolute;
+      left:5%;
+      right:5%;
+      top:50%;
+      height:2px;
+      transform:translateY(-1px);
+      background:#ff4d4d;
+      box-shadow:0 0 8px rgba(255,77,77,.8);
+    }
+
+    .scannerTop {
+      position:absolute;
+      z-index:10;
+      top:0;
+      left:0;
+      right:0;
+      padding:max(16px,env(safe-area-inset-top)) 18px 14px;
+      text-align:center;
+      text-shadow:0 1px 5px #000;
+    }
+
+    .scannerTop h1 {
+      margin:5px 0 4px;
+      font-size:22px;
+    }
+
+    .scannerTop p {
+      margin:0;
+      font-size:14px;
+      opacity:.92;
+    }
+
+    .scannerBottom {
+      position:absolute;
+      z-index:10;
+      left:0;
+      right:0;
+      bottom:0;
+      padding:16px 16px max(18px,env(safe-area-inset-bottom));
+      text-align:center;
+    }
+
+    #scannerStatus {
+      min-height:22px;
+      margin-bottom:10px;
+      font-size:14px;
+      text-shadow:0 1px 5px #000;
+    }
+
+    .scannerButtons {
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .scannerButtons button {
+      min-height:48px;
+      border:0;
+      border-radius:12px;
+      padding:10px 16px;
+      font:inherit;
+      font-weight:700;
+      background:rgba(255,255,255,.94);
+      color:#17202a;
+    }
+
+    .scannerButtons button.accent {
+      background:rgba(31,95,74,.95);
+      color:#fff;
+    }
+
+    .scannerButtons button.danger {
+      background:rgba(180,35,24,.94);
+      color:#fff;
+    }
+
+    #torchButton {
+      display:none;
+    }
+
+    #scanSuccess {
+      position:absolute;
+      inset:0;
+      z-index:20;
+      display:none;
+      place-items:center;
+      text-align:center;
+      background:rgba(8,25,18,.78);
+      pointer-events:none;
+    }
+
+    #scanSuccess.show {
+      display:grid;
+    }
+
+    .successCheck {
+      font-size:64px;
+      line-height:1;
+    }
+
+    .successCode {
+      margin-top:8px;
+      font-size:22px;
+      font-weight:800;
+    }
+
+    /* In-app cover camera */
+    #coverCameraOverlay { position:fixed; inset:0; z-index:120; display:none; background:#000; color:#fff; overflow:hidden; }
+    #coverCameraOverlay.show { display:block; }
+    #coverCameraVideo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+    .coverCameraShade { position:absolute; inset:0; pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,.52) 0,rgba(0,0,0,.10) 24%,rgba(0,0,0,.05) 72%,rgba(0,0,0,.62) 100%); }
+    .coverFrame { position:absolute; left:50%; top:50%; width:min(76vw,430px); aspect-ratio:2 / 3; transform:translate(-50%,-50%); border:3px solid rgba(255,255,255,.88); border-radius:14px; box-shadow:0 0 0 9999px rgba(0,0,0,.10); pointer-events:none; }
+    .coverCameraTop { position:absolute; left:0; right:0; top:0; padding:max(18px,env(safe-area-inset-top)) 20px 20px; text-align:center; text-shadow:0 1px 4px rgba(0,0,0,.8); }
+    .coverCameraTop h1 { margin:0; font-size:23px; }
+    .coverCameraTop p { margin:5px 0 0; font-size:14px; color:rgba(255,255,255,.88); }
+    .coverCameraBottom { position:absolute; left:0; right:0; bottom:0; padding:16px 16px max(18px,env(safe-area-inset-bottom)); background:linear-gradient(transparent,rgba(0,0,0,.78) 32%); text-align:center; }
+    #coverCameraStatus { min-height:22px; margin-bottom:12px; font-size:14px; }
+    .coverCameraButtons { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .coverCameraButtons button { border:0; border-radius:12px; min-height:46px; padding:10px 16px; font:inherit; font-weight:700; background:rgba(255,255,255,.92); color:#111; }
+    .coverCameraButtons button.accent { background:#fff; color:#174c3c; }
+    .coverCameraButtons button.capture { min-width:126px; min-height:54px; font-size:17px; background:#fff; color:#111; box-shadow:0 0 0 4px rgba(255,255,255,.22); }
+    .coverCameraButtons button:disabled { opacity:.55; }
+  </style>
+</head>
+
+<body>
+  <div id="loading">
+    <div class="loadingInner">
+      <img class="loadingIcon" src="https://celloenthusiast.github.io/wiseman-library-scanner/favicon.png" alt="">
+      <div class="loadingTitle">My Library</div>
+      <div class="loadingText">Opening library…</div>
+      <div class="bookPageLoader" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+
+  <iframe
+    id="appFrame"
+    src="https://script.google.com/macros/s/AKfycbyr1odCIZ-8GlyJkk6q0HpwZbnUenttEv_zgnJQ6Dznb9n-2zkpImapxUWXaVeKA71X/exec?embed=1&v=0917J"
+    title="My Library"
+    allow="camera; web-share; clipboard-read; clipboard-write"
+  ></iframe>
+  <div id="scannerOverlay" aria-hidden="true">
+    <div id="scannerViewport"></div>
+    <div class="scannerShade"></div>
+    <div class="scanTarget"></div>
+
+    <div class="scannerTop">
+      <h1>Scan Book Barcode</h1>
+      <p>Fill the box with the 978/979 ISBN barcode.</p>
+    </div>
+
+    <div class="scannerBottom">
+      <div id="scannerStatus">Starting rear camera…</div>
+      <div class="scannerButtons">
+        <button type="button" onclick="hideScanner()">Cancel</button>
+        <button id="torchButton" class="accent" type="button" onclick="toggleTorch()">Flash</button>
+      </div>
+    </div>
+
+    <div id="scanSuccess">
+      <div>
+        <div class="successCheck">✓</div>
+        <div>ISBN read</div>
+        <div id="successCode" class="successCode"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="coverCameraOverlay" aria-hidden="true">
+    <video id="coverCameraVideo" autoplay playsinline muted></video>
+    <div class="coverCameraShade"></div>
+    <div class="coverFrame"></div>
+    <div class="coverCameraTop">
+      <h1>Take Cover Photo</h1>
+      <p>Center the book cover inside the frame.</p>
+    </div>
+    <div class="coverCameraBottom">
+      <div id="coverCameraStatus">Starting camera…</div>
+      <div class="coverCameraButtons">
+        <button type="button" onclick="closeCoverCamera()">Cancel</button>
+        <button id="coverFlashButton" class="accent" type="button" onclick="toggleCoverFlash()">Flash: On</button>
+        <button id="coverCaptureButton" class="capture" type="button" onclick="captureCoverPhoto()">Take Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    const frame = document.getElementById('appFrame');
+    const loading = document.getElementById('loading');
+    const scannerOverlay = document.getElementById('scannerOverlay');
+    const scannerStatus = document.getElementById('scannerStatus');
+    const scanSuccess = document.getElementById('scanSuccess');
+    const successCode = document.getElementById('successCode');
+    const torchButton = document.getElementById('torchButton');
+
+    const coverCameraOverlay = document.getElementById('coverCameraOverlay');
+    const coverCameraVideo = document.getElementById('coverCameraVideo');
+    const coverCameraStatus = document.getElementById('coverCameraStatus');
+    const coverFlashButton = document.getElementById('coverFlashButton');
+    const coverCaptureButton = document.getElementById('coverCaptureButton');
+
+    let scannerInitialized = false;
+    let cameraRunning = false;
+    let scannerVisible = false;
+    let acceptingScan = false;
+    let torchOn = false;
+    let lastCandidate = '';
+    let lastCandidateAt = 0;
+    let candidateHits = 0;
+
+    let coverCameraStream = null;
+    let coverCameraTrack = null;
+    let coverCameraTarget = 'add';
+    let coverFlashSupported = false;
+    let coverFlashOn = false;
+    let coverCameraVisible = false;
+
+    frame.addEventListener('load', () => {
+      setTimeout(() => {
+        loading.classList.add('hidden');
+      }, 250);
+    });
+
+    setTimeout(() => {
+      loading.classList.add('hidden');
+    }, 8000);
+
+    // Apps Script's visible page is nested inside Google's sandbox iframe.
+    // The message therefore comes from that inner window, not directly from
+    // frame.contentWindow. Remember the exact sender so scanner results can
+    // be posted back to the correct Apps Script window.
+    let libraryMessageWindow = null;
+
+    window.addEventListener('message', async event => {
+      const data = event.data || {};
+
+      if (!event.source || event.source === window) return;
+
+      if (data.type === 'wiseman-library-cover-camera-capabilities-request') {
+        libraryMessageWindow = event.source;
+
+        try {
+          event.source.postMessage(
+            {
+              type:'wiseman-library-cover-camera-capabilities',
+              supported:Boolean(
+                navigator.mediaDevices &&
+                navigator.mediaDevices.getUserMedia
+              ),
+              version:'0909B'
+            },
+            '*'
+          );
+        } catch (error) {
+          console.warn('Could not return cover-camera capabilities.', error);
+        }
+
+        return;
+      }
+
+      if (data.type === 'wiseman-library-open-scanner') {
+        libraryMessageWindow = event.source;
+        await closeCoverCamera();
+        openScanner();
+        return;
+      }
+
+      if (data.type === 'wiseman-library-open-cover-camera') {
+        libraryMessageWindow = event.source;
+        coverCameraTarget = data.target === 'edit' ? 'edit' : 'add';
+        await stopCameraNow();
+        openCoverCamera(coverCameraTarget);
+      }
+    });
+
+    function sendToLibrary(message) {
+      if (libraryMessageWindow) {
+        try {
+          libraryMessageWindow.postMessage(message, '*');
+          return;
+        } catch (error) {
+          console.warn('Could not message Apps Script inner frame.', error);
+        }
+      }
+
+      // Fallback for browsers where Apps Script is not nested as expected.
+      if (frame.contentWindow) {
+        frame.contentWindow.postMessage(message, '*');
+      }
+    }
+
+    function isValidEan13(code) {
+      if (!/^\d{13}$/.test(code)) return false;
+
+      let sum = 0;
+
+      for (let i = 0; i < 12; i++) {
+        const digit = Number(code[i]);
+        sum += digit * (i % 2 === 0 ? 1 : 3);
+      }
+
+      const check = (10 - (sum % 10)) % 10;
+      return check === Number(code[12]);
+    }
+
+    function normalizeBookBarcode(raw) {
+      const digits = String(raw || '').replace(/\D/g, '');
+
+      if (
+        digits.length === 13 &&
+        (digits.startsWith('978') || digits.startsWith('979')) &&
+        isValidEan13(digits)
+      ) {
+        return digits;
+      }
+
+      return '';
+    }
+
+    async function openScanner() {
+      scannerVisible = true;
+      acceptingScan = true;
+      lastCandidate = '';
+      candidateHits = 0;
+      lastCandidateAt = 0;
+
+      scannerOverlay.classList.add('show');
+      scannerOverlay.setAttribute('aria-hidden', 'false');
+      scanSuccess.classList.remove('show');
+
+      if (cameraRunning) {
+        scannerStatus.textContent = 'Ready — hold the ISBN barcode inside the box.';
+        sendToLibrary({ type:'wiseman-library-scanner-opened' });
+        return;
+      }
+
+      scannerStatus.textContent = 'Starting rear camera…';
+
+      try {
+        await initializeScanner();
+        sendToLibrary({ type:'wiseman-library-scanner-opened' });
+      } catch (error) {
+        console.error(error);
+        scannerStatus.textContent = 'Camera could not start. Check Safari camera permission for this site.';
+        sendToLibrary({
+          type:'wiseman-library-scanner-error',
+          message:'Camera could not start. Check Safari camera permission for the GitHub library page.'
+        });
+      }
+    }
+
+    function initializeScanner() {
+      return new Promise((resolve, reject) => {
+        if (typeof Quagga === 'undefined') {
+          reject(new Error('Barcode scanner library did not load.'));
+          return;
+        }
+
+        try {
+          Quagga.offDetected();
+        } catch (error) {}
+
+        const workers = Math.max(
+          1,
+          Math.min(4, Number(navigator.hardwareConcurrency || 2) - 1 || 1)
+        );
+
+        Quagga.init(
+          {
+            inputStream: {
+              name:'Live',
+              type:'LiveStream',
+              target:document.getElementById('scannerViewport'),
+              constraints: {
+                facingMode:'environment',
+                width:{ ideal:1920 },
+                height:{ ideal:1080 }
+              },
+              area: {
+                top:'31%',
+                right:'5%',
+                left:'5%',
+                bottom:'43%'
+              }
+            },
+            locator: {
+              patchSize:'medium',
+              halfSample:true
+            },
+            decoder: {
+              readers:['ean_reader'],
+              multiple:false
+            },
+            locate:false,
+            numOfWorkers:workers
+          },
+          async function(error) {
+            if (error) {
+              reject(error);
+              return;
+            }
+
+            scannerInitialized = true;
+            Quagga.onDetected(handleDetection);
+            Quagga.start();
+            cameraRunning = true;
+            scannerStatus.textContent = 'Ready — hold the ISBN barcode inside the box.';
+
+            await tuneCamera();
+            detectTorch();
+            resolve();
+          }
+        );
+      });
+    }
+
+    async function tuneCamera() {
+      try {
+        const track = Quagga.CameraAccess && Quagga.CameraAccess.getActiveTrack
+          ? Quagga.CameraAccess.getActiveTrack()
+          : null;
+
+        if (!track || !track.getCapabilities || !track.applyConstraints) {
+          return;
+        }
+
+        const caps = track.getCapabilities();
+
+        if (
+          Array.isArray(caps.focusMode) &&
+          caps.focusMode.includes('continuous')
+        ) {
+          try {
+            await track.applyConstraints({
+              advanced:[{ focusMode:'continuous' }]
+            });
+          } catch (error) {}
+        }
+      } catch (error) {
+        console.warn('Camera tuning unavailable.', error);
+      }
+    }
+
+    function handleDetection(result) {
+      if (!scannerVisible || !acceptingScan) {
+        return;
+      }
+
+      const code = normalizeBookBarcode(
+        result && result.codeResult
+          ? result.codeResult.code
+          : ''
+      );
+
+      if (!code) return;
+
+      const now = Date.now();
+
+      if (
+        code === lastCandidate &&
+        now - lastCandidateAt < 1200
+      ) {
+        candidateHits += 1;
+      } else {
+        lastCandidate = code;
+        candidateHits = 1;
+      }
+
+      lastCandidateAt = now;
+      scannerStatus.textContent = candidateHits >= 2
+        ? 'Barcode confirmed.'
+        : 'Reading… hold steady.';
+
+      // Two matching reads makes Quagga much less likely to accept a false
+      // decode while still being effectively instant when the barcode is clear.
+      if (candidateHits >= 2) {
+        acceptBarcode(code);
+      }
+    }
+
+    function acceptBarcode(isbn) {
+      if (!acceptingScan) return;
+
+      acceptingScan = false;
+
+      if (navigator.vibrate) {
+        navigator.vibrate(70);
+      }
+
+      successCode.textContent = isbn;
+      scanSuccess.classList.add('show');
+
+      sendToLibrary({
+        type:'wiseman-library-isbn',
+        isbn:isbn
+      });
+
+      // Release the camera immediately between books. A brief success
+      // flash remains visible, but the camera/decoder is stopped underneath it.
+      stopCameraNow();
+
+      setTimeout(() => {
+        scanSuccess.classList.remove('show');
+      }, 220);
+    }
+
+    function hideScanner() {
+      stopCameraNow();
+    }
+
+    async function stopCameraNow() {
+      scannerVisible = false;
+      acceptingScan = false;
+      torchOn = false;
+      torchButton.textContent = 'Flash';
+      scannerOverlay.classList.remove('show');
+      scannerOverlay.setAttribute('aria-hidden', 'true');
+
+      if (!cameraRunning) {
+        return;
+      }
+
+      let activeTrack = null;
+
+      try {
+        activeTrack =
+          Quagga.CameraAccess && Quagga.CameraAccess.getActiveTrack
+            ? Quagga.CameraAccess.getActiveTrack()
+            : null;
+      } catch (error) {}
+
+      try {
+        Quagga.offDetected();
+      } catch (error) {}
+
+      try {
+        Quagga.stop();
+      } catch (error) {
+        console.warn('Could not stop scanner cleanly.', error);
+      }
+
+      // Explicitly stop the MediaStreamTrack as a second safeguard so iOS
+      // releases the physical camera between scans.
+      try {
+        if (activeTrack && activeTrack.readyState !== 'ended') {
+          activeTrack.stop();
+        }
+      } catch (error) {}
+
+      cameraRunning = false;
+      scannerInitialized = false;
+
+      const viewport = document.getElementById('scannerViewport');
+      viewport.innerHTML = '';
+    }
+
+    function detectTorch() {
+      torchButton.style.display = 'none';
+
+      try {
+        const track = Quagga.CameraAccess && Quagga.CameraAccess.getActiveTrack
+          ? Quagga.CameraAccess.getActiveTrack()
+          : null;
+
+        if (!track || !track.getCapabilities) return;
+
+        const caps = track.getCapabilities();
+
+        if (caps && caps.torch) {
+          torchButton.style.display = 'inline-block';
+        }
+      } catch (error) {}
+    }
+
+    async function toggleTorch() {
+      try {
+        if (!Quagga.CameraAccess) return;
+
+        if (torchOn) {
+          await Quagga.CameraAccess.disableTorch();
+          torchOn = false;
+          torchButton.textContent = 'Flash';
+        } else {
+          await Quagga.CameraAccess.enableTorch();
+          torchOn = true;
+          torchButton.textContent = 'Flash Off';
+        }
+      } catch (error) {
+        torchButton.style.display = 'none';
+      }
+    }
+
+    async function openCoverCamera(target) {
+      coverCameraTarget = target === 'edit' ? 'edit' : 'add';
+      coverCameraVisible = true;
+      coverFlashSupported = false;
+      coverFlashOn = false;
+
+      coverCameraOverlay.classList.add('show');
+      coverCameraOverlay.setAttribute('aria-hidden','false');
+      coverCaptureButton.disabled = true;
+      coverFlashButton.disabled = true;
+      coverFlashButton.textContent = 'Flash: Checking…';
+      coverCameraStatus.textContent = 'Starting camera…';
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('This browser does not provide live camera access.');
+        }
+
+        coverCameraStream = await navigator.mediaDevices.getUserMedia({
+          audio:false,
+          video:{
+            facingMode:{ ideal:'environment' },
+            width:{ ideal:1920 },
+            height:{ ideal:1440 }
+          }
+        });
+
+        coverCameraTrack = coverCameraStream.getVideoTracks()[0] || null;
+        coverCameraVideo.srcObject = coverCameraStream;
+        await coverCameraVideo.play();
+
+        if (coverCameraTrack && coverCameraTrack.getCapabilities && coverCameraTrack.applyConstraints) {
+          try {
+            const caps = coverCameraTrack.getCapabilities();
+            if (Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+              try { await coverCameraTrack.applyConstraints({ advanced:[{ focusMode:'continuous' }] }); } catch (error) {}
+            }
+            coverFlashSupported = Boolean(caps && caps.torch);
+          } catch (error) {
+            coverFlashSupported = false;
+          }
+        }
+
+        if (coverFlashSupported) {
+          try {
+            await setCoverFlash(true);
+          } catch (error) {
+            coverFlashSupported = false;
+            coverFlashOn = false;
+          }
+        }
+
+        updateCoverFlashButton();
+        coverCaptureButton.disabled = false;
+        coverCameraStatus.textContent = coverFlashSupported
+          ? (coverFlashOn ? 'Ready — flash is on. Turn it off if the cover has glare.' : 'Ready — flash is off.')
+          : 'Ready — flash control is not available on this camera.';
+
+        sendToLibrary({
+          type:'wiseman-library-cover-camera-opened',
+          target:coverCameraTarget,
+          flashSupported:coverFlashSupported,
+          flashOn:coverFlashOn
+        });
+      } catch (error) {
+        console.error('Cover camera error.', error);
+        coverCameraStatus.textContent = 'Camera could not start. Check camera permission for this site.';
+        sendToLibrary({
+          type:'wiseman-library-cover-camera-error',
+          target:coverCameraTarget,
+          message:'Cover camera could not start. Check camera permission for the GitHub library page.'
+        });
+        await stopCoverCameraStream();
+      }
+    }
+
+    function updateCoverFlashButton() {
+      if (!coverFlashSupported) {
+        coverFlashButton.disabled = true;
+        coverFlashButton.textContent = 'Flash unavailable';
+        return;
+      }
+      coverFlashButton.disabled = false;
+      coverFlashButton.textContent = coverFlashOn ? 'Flash: On' : 'Flash: Off';
+    }
+
+    async function setCoverFlash(on) {
+      if (!coverFlashSupported || !coverCameraTrack || !coverCameraTrack.applyConstraints) return false;
+      await coverCameraTrack.applyConstraints({ advanced:[{ torch:Boolean(on) }] });
+      coverFlashOn = Boolean(on);
+      updateCoverFlashButton();
+      return true;
+    }
+
+    async function toggleCoverFlash() {
+      if (!coverFlashSupported) return;
+      try {
+        await setCoverFlash(!coverFlashOn);
+        coverCameraStatus.textContent = coverFlashOn ? 'Flash is on.' : 'Flash is off.';
+      } catch (error) {
+        console.warn('Cover flash control failed.', error);
+        coverFlashSupported = false;
+        coverFlashOn = false;
+        updateCoverFlashButton();
+        coverCameraStatus.textContent = 'Flash control is not available on this camera.';
+      }
+    }
+
+    async function captureCoverPhoto() {
+      if (!coverCameraVisible || !coverCameraVideo.videoWidth || !coverCameraVideo.videoHeight) {
+        coverCameraStatus.textContent = 'Camera is not ready yet. Try again in a moment.';
+        return;
+      }
+
+      coverCaptureButton.disabled = true;
+      coverCameraStatus.textContent = 'Capturing cover…';
+
+      try {
+        const sourceWidth = coverCameraVideo.videoWidth;
+        const sourceHeight = coverCameraVideo.videoHeight;
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d', { alpha:false });
+        if (!ctx) throw new Error('Could not create photo canvas.');
+        ctx.drawImage(coverCameraVideo,0,0,width,height);
+        const dataUrl = canvas.toDataURL('image/jpeg',0.82);
+
+        sendToLibrary({
+          type:'wiseman-library-cover-photo',
+          target:coverCameraTarget,
+          dataUrl:dataUrl
+        });
+
+        coverCameraStatus.textContent = 'Photo captured.';
+        await closeCoverCamera();
+      } catch (error) {
+        console.error('Cover capture failed.', error);
+        coverCaptureButton.disabled = false;
+        coverCameraStatus.textContent = 'Photo could not be captured. Try again.';
+      }
+    }
+
+    async function stopCoverCameraStream() {
+      try {
+        if (coverFlashOn) await setCoverFlash(false);
+      } catch (error) {}
+
+      if (coverCameraStream) {
+        try {
+          coverCameraStream.getTracks().forEach(track => {
+            try { track.stop(); } catch (error) {}
+          });
+        } catch (error) {}
+      }
+
+      coverCameraStream = null;
+      coverCameraTrack = null;
+      coverCameraVideo.srcObject = null;
+      coverFlashSupported = false;
+      coverFlashOn = false;
+      updateCoverFlashButton();
+    }
+
+    async function closeCoverCamera() {
+      coverCameraVisible = false;
+      await stopCoverCameraStream();
+      coverCameraOverlay.classList.remove('show');
+      coverCameraOverlay.setAttribute('aria-hidden','true');
+      coverCaptureButton.disabled = false;
+      coverCameraStatus.textContent = 'Starting camera…';
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) return;
+      if (cameraRunning) stopCameraNow();
+      if (coverCameraVisible || coverCameraStream) closeCoverCamera();
+    });
+  </script>
+</body>
+</html>
